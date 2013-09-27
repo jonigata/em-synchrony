@@ -76,18 +76,15 @@ module EM::Synchrony
       end
 
       def begin_transaction(options = {}) #:nodoc:
-        @transaction[Fiber.current.object_id] =
-          current_transaction.begin(options)
+        set_current_transaction(current_transaction.begin(options))
       end
 
       def commit_transaction #:nodoc:
-        @transaction[Fiber.current.object_id] =
-          current_transaction.commit
+        set_current_transaction(current_transaction.commit)
       end
 
       def rollback_transaction #:nodoc:
-        @transaction[Fiber.current.object_id] =
-          current_transaction.rollback
+        set_current_transaction(current_transaction.rollback)
       end
 
       def reset_transaction #:nodoc:
@@ -103,7 +100,12 @@ module EM::Synchrony
 
       protected
 
-      def set_current_transaction
+      def set_current_transaction(t)
+        if t == @closed_transaction
+          @transaction.delete(Fiber.current.object_id)
+        else
+          @transaction[Fiber.current.object_id] = t
+        end
       end
     end
 
